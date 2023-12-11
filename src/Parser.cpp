@@ -1,166 +1,503 @@
 #include "Parser.h"
 
-// main point is that the whole input has been consumed
-AST *Parser::parse()
-{
-    AST *Res = parseGSM();
+AST* Parser::parse() {
+    AST* Res = parseMainGoal();
+    expect(Token::eoi);
     return Res;
 }
 
-AST *Parser::parseGSM()
-{
-    llvm::SmallVector<Expr *> exprs;
-    while (!Tok.is(Token::eoi))
+AST* Parser::parseMainGoal() {
+    //Expr* E;
+    llvm::SmallVector<llvm::StringRef> vars;
+    while (!Tok.is(Token::eoi)) 
     {
         switch (Tok.getKind())
         {
-        case Token::KW_type:
-            Expr *d;
-            d = parseDec();
-            if (d)
-                exprs.push_back(d);
+        case Token::KW_int:
+            Expr* goal = parseGoal();
+            if (goal)
+                vars.push_back(goal);
             else
-                goto _error2;
+                goto _error;
             break;
-        case Token::ident:
-            Expr *a;
-            a = parseAssign();
 
-            if (!Tok.is(Token::semicolon))
-            {
-                error();
-                goto _error2;
-            }
-            if (a)
-                exprs.push_back(a);
+        case Token::ident:
+            Expr* goal = parseGoal();
+            if (goal)
+                vars.push_back(goal);
             else
-                goto _error2;
+                goto _error;
+            break;
+
+
+        case Token::KW_if:
+            Expr* IfElse = parseIfElse();
+            if (IfElse)
+                vars.push_back(IfElse);
+            else
+                goto _error;
+            break;
+        case Token::KW_loopc:
+            Expr* Loop = parseLoop();
+            if (Loop)
+                vars.push_back(Loop);
+            else
+                goto _error;
             break;
         default:
-            goto _error2;
-            break;
+            while (Tok.isOneOf(Token::KW_end,
+                Token::eoi))
+            {
+                advance();
+            }
+            error();  
         }
-        advance(); // TODO: watch this part
+        advance();
     }
-    return new GSM(exprs);
-_error2:
+    //
+    return new Group(vars);// ***
+
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
 
-Expr *Parser::parseDec()
-{
-    Expr *E;
-    llvm::SmallVector<llvm::StringRef, 8> Vars;
-    if (!Tok.is(Token::KW_type))
-        goto _error;
+Expr* Parser::parseIfElse() {
+    Assignment* A;
+    Expr* E;
+    llvm::SmallVector<Expr*> conditions;
+    llvm::SmallVector<llvm::SmallVector<Assignment*>> assignments;
 
-    advance();
-    if (expect(Token::KW_int))
-        goto _error;
-
+    if (expect(Token::ifc))
+        error((const char*)"ifc");
     advance();
 
-    if (expect(Token::ident))
-        goto _error;
-    Vars.push_back(Tok.getText());
+    E = parseExpr();
+    llvm::errs() << "E: " << E << "\n";
+    conditions.push_back(E);
+
+    if (expect(Token::colon))
+        error((const char*)"colon");
     advance();
 
-    while (Tok.is(Token::comma))
-    {
-        advance();
-        if (expect(Token::ident))
-            goto _error;
-        Vars.push_back(Tok.getText());
-        advance();
+    if (expect(Token::begin))
+        error((const char*)"begin");
+    advance();
+
+    llvm::SmallVector<Assignment*> currentAssignments;
+    while (!Tok.is(Token::end)) {
+        if (Tok.is(Token::ident)) {
+            A = parseAssign();
+
+            if (!Tok.is(Token::semicolon))
+            {
+                error((const char*)";");
+            }
+            advance();
+            if (A)
+                currentAssignments.push_back(A);
+            else
+                error((const char*)"kossher");
+        }
+        else error((const char*)"ident");
     }
+    assignments.push_back(currentAssignments);
+    if (expect(Token::end))
+        error((const char*)"end");
+    advance();
 
-    if (Tok.is(Token::equal))
-    {
+    while (Tok.is(Token::elif)) {
+        if (expect(Token::elif))
+            error();
         advance();
+
         E = parseExpr();
+        conditions.push_back(E);
+
+        if (expect(Token::colon))
+            error();
+        advance();
+
+        if (expect(Token::begin))
+            error();
+        advance();
+
+        currentAssignments.clear();
+        while (!Tok.is(Token::end)) {
+            if (Tok.is(Token::ident)) {
+                A = parseAssign();
+
+                if (!Tok.is(Token::semicolon))
+                {
+                    error();
+                }
+                advance();
+                if (A)
+                    currentAssignments.push_back(A);
+                else
+                    error();
+            }
+            else error();
+        }
+        assignments.push_back(currentAssignments);
+        advance();
     }
 
-    if (expect(Token::semicolon))
-        goto _error;
+    if (Tok.is(Token::elsec)) {
+        advance();
 
-    return new Declaration(Vars, E);
+        if (expect(Token::colon))
+            error();
+        advance();
+
+        if (expect(Token::begin))
+            error();
+        advance();
+
+        currentAssignments.clear();
+        while (!Tok.is(Token::end)) {
+            if (Tok.is(Token::ident)) {
+                A = parseAssign();
+
+                if (!Tok.is(Token::semicolon))
+                {
+                    error();
+                    goto _error;
+                }
+                advance();
+                if (A)
+                    currentAssignments.push_back(A);
+                else
+                    error();
+            }
+            else error();
+        }
+        assignments.push_back(currentAssignments);
+        advance();
+    }
+
+    return new IfElse(conditions, assignments);
 _error: // TODO: Check this later in case of error :)
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
 
-Expr *Parser::parseAssign()
-{
-    Expr *E;
-    Factor *F;
-    F = (Factor *)(parseFactor());
+Expr* Parser::parseLoop() {
+    Assignment* A;
+    Expr* Condition;
+    llvm::SmallVector<Assignment*> assignments;
 
-    if (!Tok.is(Token::equal))
-    {
+    if (expect(Token::loopc)) {
         error();
-        return nullptr;
+        goto _error;
     }
 
     advance();
-    E = parseExpr();
-    return new Assignment(F, E);
+
+    Condition = parseExpr();
+
+    if (expect(Token::colon)) {
+        error();
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::begin)) {
+        error();
+        goto _error;
+    }
+    advance();
+
+    while (!Tok.is(Token::end)) {
+        if (Tok.is(Token::ident)) {
+            A = parseAssign();
+
+            if (!Tok.is(Token::semicolon)) {
+                error();
+                goto _error;
+            }
+            advance();
+            if (A)
+                assignments.push_back(A);
+            else {
+                error();
+                goto _error;
+            }
+        }
+        else {
+            error();
+            goto _error;
+        }
+
+    }
+
+    return new Loop(Condition, assignments);
+_error: // TODO: Check this later in case of error :)
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+
 }
 
-Expr *Parser::parseExpr()
-{
-    Expr *Left = parseTerm();
-    while (Tok.isOneOf(Token::plus, Token::minus))
-    {
-        BinaryOp::Operator Op =
-            Tok.is(Token::plus) ? BinaryOp::Plus : BinaryOp::Minus;
+Expr* Parser::parseBody() {
+    
+    Expr* EquSoft = parseEquSoft();
+    Expr* Equsoft2 ;
+    if (consume(Token::semicolon))
+        error();
+
+    while (Tok.getKind() != Token::semicolon) {
         advance();
-        Expr *Right = parseTerm();
+        llvm::SmallVector<llvm::StringRef> vars;
+        Equsoft2 = parseEquSoft();
+        vars.push_back(Equsoft2);
+    }
+    return new WithDecl(vars,EquSoft);
+
+}
+Expr* Parser::parseGoal() {
+    Expr* Equalization = parseEqualization();
+    Expr* Equalization2;
+    if (consume(Token::semicolon))
+        error();
+    while (Tok.getKind() != Token::semicolon) {
+        advance();
+        llvm::SmallVector<llvm::StringRef> vars;
+        Equalization2 = parseEqualization();
+        vars.push_back(Equalization2);
+    }
+    return new WithDecl(vars, Equalization);
+
+}
+
+Expr* Parser::parseEqualization() {
+    llvm::SmallVector<llvm::StringRef> vars;
+    while (Tok.is(Token::semicolon))//follow for Equalization
+    {
+        switch (Tok.getKind())
+        {
+        case Token::ident:
+            Expr* EquSoft = parseEquSoft();
+            if (EquSoft)
+                vars.push_back(EquSoft);
+            else
+                goto _error;
+            break;
+        case Token::number:
+            Expr* EquHard = parseEquHard();
+            if (EquHard)
+                vars.push_back(EquHard);
+            else
+                goto _error;
+            break;
+            default:
+                error();
+                while (Tok.isOneOf(Token::semicolon))
+                {
+                    advance();
+                }
+        }
+    }
+
+_error:
+    while (Tok.getKind() != Token::semicolon)
+        advance();
+    return nullptr;
+
+}
+Expr* Parser::parseEquHard() {
+    Expr* Left = parseDisjunction();
+    while (Tok.is(Token::KW_logical_or)) {
+        BinaryOp::Operator Op = BinaryOp::logical_or;
+        advance();
+        Expr* Right = parseDisjunction();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+
+}
+Expr* Parser::parseEquSoft() {
+    Expr* Left = parseDisjunction();
+    while (Tok.is(Token::KW_logical_or)) {
+        BinaryOp::Operator Op = BinaryOp::logical_or;
+        advance();
+        Expr* Right = parseDisjunction();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+}
+Expr* Parser::parseHardDefinition() {
+    Expr* Left = parseDisjunction();
+    while (Tok.is(Token::KW_logical_or)) {
+        BinaryOp::Operator Op = BinaryOp::logical_or;
+        advance();
+        Expr* Right = parseDisjunction();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+
+}
+Expr* Parser::parseSoftDefinition() {
+    Expr* Left = parseDisjunction();
+    while (Tok.is(Token::KW_logical_or)) {
+        BinaryOp::Operator Op = BinaryOp::logical_or;
+        advance();
+        Expr* Right = parseDisjunction();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+}
+Expr* Parser::parseAssign() {
+    Expr* Left = parseDisjunction();
+    while (Tok.is(Token::KW_logical_or)) {
+        BinaryOp::Operator Op = BinaryOp::logical_or;
+        advance();
+        Expr* Right = parseDisjunction();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+}
+Expr* Parser::parseDisjunction() {
+    Expr* Left = parseConjunction();
+    while (Tok.is(Token::KW_logical_and)) {
+        BinaryOp::Operator Op = BinaryOp::logical_and;
+        advance();
+        Expr* Right = parseConjunction();
         Left = new BinaryOp(Op, Left, Right);
     }
     return Left;
 }
-
-Expr *Parser::parseTerm()
-{
-    Expr *Left = parseFactor();
-    while (Tok.isOneOf(Token::star, Token::slash))
-    {
+Expr* Parser::parseConjunction() {
+    Expr* Left = parseIsEqual();
+    while (Tok.isOneOf(Token::is_equal, Token::is_not_equal)) {
         BinaryOp::Operator Op =
-            Tok.is(Token::star) ? BinaryOp::Mul : BinaryOp::Div;
+            Tok.is(Token::is_equal) ?
+            BinaryOp::is_equal : BinaryOp::is_not_equal;
         advance();
-        Expr *Right = parseFactor();
+        Expr* Right = parseIsEqual();
         Left = new BinaryOp(Op, Left, Right);
     }
     return Left;
 }
+Expr* Parser::parseIsEqual() {
+    Expr* Left = parseSoftComparison();
+    while (Tok.isOneOf(Token::soft_comp_greater, Token::soft_comp_lower)) {
+        BinaryOp::Operator Op =
+            Tok.is(Token::soft_comp_greater) ?
+            BinaryOp::soft_comp_greater
+            : BinaryOp::soft_comp_lower;
+        advance();
+        Expr* Right = parseSoftComparison();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+}
+Expr* Parser::parseSoftComparison() {
+    Expr* Left = parseHardComparison();
+    while (Tok.isOneOf(Token::hard_comp_greater, Token::hard_comp_lower)) {
+        BinaryOp::Operator Op =
+            Tok.is(Token::hard_comp_greater) ?
+            BinaryOp::hard_comp_greater
+            : BinaryOp::hard_comp_lower;
+        advance();
+        Expr* Right = parseHardComparison();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
 
-Expr *Parser::parseFactor()
-{
-    Expr *Res = nullptr;
-    switch (Tok.getKind())
-    {
+}
+Expr* Parser::parseHardComparison() {
+    Expr* Left = parseExpression();
+    while (Tok.isOneOf(Token::plus, Token::minus)) {
+        BinaryOp::Operator Op =
+            Tok.is(Token::plus) ?
+            BinaryOp::Plus
+            : BinaryOp::Minus;
+        advance();
+        Expr* Right = parseExpression();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+
+}
+Expr* Parser::parseExpression() {
+    Expr* Left = parseTerm();
+    BinaryOp::Operator Op;
+    while (Tok.isOneOf(Token::star, Token::slash,
+        Token::mod)) {
+        switch (Tok.getKind())
+        {
+        case Token::star:
+            Op = BinaryOp::Mul;
+        break;
+        case Token::slash:
+             Op = BinaryOp::Div;
+        break;
+        case Token::mod:
+             Op = BinaryOp::modulo;
+            break;
+        }
+        advance();
+        Expr* Right = parseTerm();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+}
+Expr* Parser::parseTerm() {
+    Expr* Left = parseFactor();
+    while (Tok.is(Token::power)) {
+        BinaryOp::Operator Op = BinaryOp::powerr;
+        advance();
+        Expr* Right = parseFactor();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+
+}
+
+Expr* Parser::parseFactor() {
+    Expr* Res = nullptr;
+    switch (Tok.getKind()) {
     case Token::number:
         Res = new Factor(Factor::Number, Tok.getText());
         advance();
         break;
+
     case Token::ident:
         Res = new Factor(Factor::Ident, Tok.getText());
         advance();
         break;
+
     case Token::l_paren:
         advance();
-        Res = parseExpr();
+        Res = parseAssign();
         if (!consume(Token::r_paren))
             break;
-    default: // error handling
-        if (!Res)
+    default:
+        if (!Res)//if it was null the parser It implies that the
+            //parser was unable to successfully construct an expression
+            // node based on the encountered tokens within the switch-case logic.
             error();
-        while (!Tok.isOneOf(Token::r_paren, Token::star, Token::plus, Token::minus, Token::slash, Token::eoi))
+        /*
+        * The purpose of this while loop is to skip tokens until
+        it reaches a point where it finds a token that allows the
+        parser to continue parsing without errors. It essentially
+        skips tokens until it encounters one of the specified tokens.
+        */
+        while (!Tok.isOneOf(Token::r_paren, Token::star,
+            Token::plus, Token::minus,
+            Token::slash, Token::eoi))
             advance();
-        break;
     }
     return Res;
 }
