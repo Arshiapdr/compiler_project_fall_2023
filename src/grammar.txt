@@ -1,0 +1,24 @@
+<MainGoal> ::= (<Goal> | <IfElse> | <Loop>)*
+<IfElse> ::= <If> <ElIf> <Else>
+<If> ::= ("if " <Assign> ": begin " <Body> " end")
+<ElIf> ::= (" elif " <Assign> ": begin " <Body> " end")*
+<Else> ::= (" else: begin " <Body> " end")?
+<Loop> ::= ("loopc " <Assign> ": begin " <Body> " end")
+<Body> ::= (<EquSoft> ";")+
+<Goal> ::= (<Equalization> ";")*
+<Equalization> ::= <EquHard> | <EquSoft>
+<EquHard> ::= (<HardDefinition>) | (<HardDefinition> (" = ") <Assign> (", " <Assign>)*)
+<EquSoft> ::= (<SoftDefinition> (" = " | " += " | " *= " | " /= " | " -= " | " %= ") <Assign> (", " <Assign>)*)
+<HardDefinition> ::= "int " <ID> (", " <ID>)*
+<SoftDefinition> ::= <ID> (", " <ID>)*
+<Assign> ::= <Disjunction> (" or " <Disjunction>)*
+<Disjunction> ::= <Conjunction> (" and " <Conjunction>)*
+<Conjunction> ::= <IsEqual> ((" == " | " != ") <IsEqual>)*
+<IsEqual> ::= <SoftComparison> ((" >= " | " <= " ) <SoftComparison>)*
+<SoftComparison> ::= <HardComparison> ((" > " | " < " ) <HardComparison>)*
+<HardComparison> ::= <Expression> ((" + " | " - ") <Expression>)*
+<Expression> ::= <Term> ((" * " | " / " | " % ") <Term>)*
+<Term> ::= <Factor> (" ^ " <Factor>)*
+<Factor> ::= <ID> | <Number> | "(" <Assign> ")"
+<ID> ::= ( [a-z] | [A-Z])+
+<Number> ::= ([0-9])+
