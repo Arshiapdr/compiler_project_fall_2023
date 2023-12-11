@@ -52,8 +52,8 @@ namespace
       Builder.CreateRet(Int32Zero);
     }
 
-    // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    // Visit function for the MainGoal node in the AST.
+    virtual void visit(MainGoal &Node) override
     {
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
@@ -122,7 +122,49 @@ namespace
       case BinaryOp::Mul:
         V = Builder.CreateNSWMul(Left, Right);
         break;
-      case BinaryOp::Div:
+      case BinaryOp::Module:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::Power:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::greaterThan:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::lowerThan:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::greaterEqualThan:
+        V = Builder.CreateNSWSub(Left, Right);
+        break;
+      case BinaryOp::lowerEqualThan:
+        V = Builder.CreateNSWMul(Left, Right);
+        break;
+      case BinaryOp::isEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::isNotEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::logicalAnd:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::logicalOr:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::plusEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::minusEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::multEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::divEqual:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+      case BinaryOp::modEqual:
         V = Builder.CreateSDiv(Left, Right);
         break;
       }
