@@ -4,128 +4,164 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
-// Forward declarations of classes used in the AST
 class AST;
 class Expr;
-class GSM;
 class Factor;
 class BinaryOp;
+class WithDecl;
 class Assignment;
-class Declaration;
-
-// ASTVisitor class defines a visitor pattern to traverse the AST
-class ASTVisitor
-{
+class Group;
+/*
+In C++, = 0 after a virtual function declaration signifies that the function is a pure virtual function.
+A pure virtual function is a virtual function that has no implementation in the base class and must be overridden
+by any concrete (non-abstract) derived class. A class containing at least one pure virtual function becomes an abstract class,
+meaning it cannot be instantiated directly; it serves as a base class
+for other classes that provide implementations for all its pure virtual functions.
+*/
+class ASTVisitor {
 public:
-  // Virtual visit functions for each AST node type
-  virtual void visit(AST &) {}               // Visit the base AST node
-  virtual void visit(Expr &) {}              // Visit the expression node
-  virtual void visit(GSM &) = 0;             // Visit the group of expressions node
-  virtual void visit(Factor &) = 0;          // Visit the factor node
-  virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
-  virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
-  virtual void visit(Declaration &) = 0;     // Visit the variable declaration node
+    virtual void visit(AST&) {};
+    virtual void visit(Expr&) {};
+    virtual void visit(Group&) = 0;
+    virtual void visit(Factor&) = 0;
+    virtual void visit(BinaryOp&) = 0;
+    virtual void visit(WithDecl&) = 0;
+};
+/*
+*     Abstract base class for all AST nodes.
+    Contains a pure virtual function accept that accepts an ASTVisitor
+    as an argument. It's meant to be overridden in derived classes.
+*/
+
+class AST {
+public:
+    virtual ~AST() {}// When a class is designed to be inherited
+    //(as AST appears to be in the provided code), it's a good 
+    //practice to declare its destructor as virtual.
+    //This allows proper destruction of derived class objects
+    //when they are destroyed through a pointer to the base class.
+    virtual void accept(ASTVisitor& V) = 0;
 };
 
-// AST class serves as the base class for all AST nodes
-class AST
-{
+class Expr : public AST {
 public:
-  virtual ~AST() {}
-  virtual void accept(ASTVisitor &V) = 0;    // Accept a visitor for traversal
+    Expr() {}
 };
-
-// Expr class represents an expression in the AST
-class Expr : public AST
+class Group : public Expr
 {
-public:
-  Expr() {}
-};
-
-// GSM class represents a group of expressions in the AST
-class GSM : public Expr
-{
-  using ExprVector = llvm::SmallVector<Expr *>;
+    using ExprVector = llvm::SmallVector<Expr*>;
 
 private:
-  ExprVector exprs;                          // Stores the list of expressions
+    ExprVector exprs;                          // Stores the list of expressions
 
 public:
-  GSM(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
+    Group(llvm::SmallVector<Expr*> exprs) : exprs(exprs) {}
 
-  llvm::SmallVector<Expr *> getExprs() { return exprs; }
+    llvm::SmallVector<Expr*> getExprs() { return exprs; }
 
-  ExprVector::const_iterator begin() { return exprs.begin(); }
+    ExprVector::const_iterator begin() { return exprs.begin(); }
 
-  ExprVector::const_iterator end() { return exprs.end(); }
+    ExprVector::const_iterator end() { return exprs.end(); }
 
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
+    virtual void accept(ASTVisitor& V) override
+    {
+        V.visit(*this);
+    }
 };
-
-// Factor class represents a factor in the AST (either an identifier or a number)
-class Factor : public Expr
-{
+class Factor : public Expr {
 public:
-  enum ValueKind
-  {
-    Ident,
-    Number
-  };
+    enum ValueKind { Ident, Number };
 
 private:
-  ValueKind Kind;                            // Stores the kind of factor (identifier or number)
-  llvm::StringRef Val;                       // Stores the value of the factor
+    ValueKind Kind;
+    llvm::StringRef Val;
 
+
+    /*
+    *  In this language numbers and variables are treated almost identically,
+       so we decided to create only one AST node class to represent them.
+       The main reason is we only have 1 type variables (int) and everywhere in
+       out language when we have [a Z] it is defenitley a reference to a variable.
+    */
 public:
-  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
-
-  ValueKind getKind() { return Kind; }
-
-  llvm::StringRef getVal() { return Val; }
-
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
+    Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val)
+    {}
+    ValueKind getKind() {
+        return Kind;
+    }
+    llvm::StringRef getVal() {
+        return Val;
+    }
+    virtual void accept(ASTVisitor& V) override {
+        V.visit(*this);
+    }
 };
-
-// BinaryOp class represents a binary operation in the AST (plus, minus, multiplication, division)
-class BinaryOp : public Expr
-{
+// represents arithmetic expression
+class BinaryOp : public Expr {
 public:
-  enum Operator
-  {
-    Plus,
-    Minus,
-    Mul,
-    Div
-  };
+    enum Operator { Plus, Minus, Mul, Div,equal,
+    plus_equal,mul_equal,div_equal,minus_equal,
+    logical_or,logical_and,is_equal,is_not_equal,
+    soft_comp_greater,soft_comp_lower,
+    hard_comp_greater,soft_comp_lower,
+    modulo,powerr,l_paren,r_paren,
+    mod_equal, hard_comp_lower
+    };
 
 private:
-  Expr *Left;                               // Left-hand side expression
-  Expr *Right;                              // Right-hand side expression
-  Operator Op;                              // Operator of the binary operation
+    Expr* Left;
+    Expr* Right;
+    Operator Op;
 
 public:
-  BinaryOp(Operator Op, Expr *L, Expr *R) : Op(Op), Left(L), Right(R) {}
-
-  Expr *getLeft() { return Left; }
-
-  Expr *getRight() { return Right; }
-
-  Operator getOperator() { return Op; }
-
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
+    BinaryOp(Operator Op, Expr* L, Expr* R) : Op(Op), Left(L), Right(R)
+    {}
+    Expr* getLeft()
+    {
+        return Left;
+    }
+    Expr* getRight()
+    {
+        return Right;
+    }
+    Operator getOperator()
+    {
+        return Op;
+    }
+    virtual void accept(ASTVisitor& V) override
+    {
+        V.visit(*this);
+    }
 };
+//Represents a declaration node in the AST,
+//where variables are declared with an expression.
+class WithDecl : public AST
+{
+    //type definition
+    using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
+    VarVector Vars;
+    Expr* E;
 
-// Assignment class represents an assignment expression in the AST
-class Assignment : public Expr
+public:
+    WithDecl(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr* E) : Vars(Vars), E(E)
+    {}
+    VarVector::const_iterator begin()
+    {
+        return Vars.begin();
+    }
+    VarVector::const_iterator end()
+    {
+        return Vars.end();
+    }
+    Expr* getExpr()
+    {
+        return E;
+    }
+    virtual void accept(ASTVisitor& V) override
+    {
+        V.visit(*this);
+    }
+    class Assignment : public Expr
 {
 private:
   Factor *Left;                             // Left-hand side factor (identifier)
@@ -143,27 +179,26 @@ public:
     V.visit(*this);
   }
 };
+    class Assignment : public Expr
+    {
+    private:
+        Factor* Left;                             // Left-hand side factor (identifier)
+        Expr* Right;                              // Right-hand side expression
 
-// Declaration class represents a variable declaration with an initializer in the AST
-class Declaration : public Expr
-{
-  using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-  VarVector Vars;                           // Stores the list of variables
-  Expr *E;                                  // Expression serving as the initializer
+    public:
+        Assignment(Factor* L, Expr* R) : Left(L), Right(R) {}
 
-public:
-  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr *E) : Vars(Vars), E(E) {}
+        Factor* getLeft() { return Left; }
 
-  VarVector::const_iterator begin() { return Vars.begin(); }
+        Expr* getRight() { return Right; }
 
-  VarVector::const_iterator end() { return Vars.end(); }
+        virtual void accept(ASTVisitor& V) override
+        {
+            V.visit(*this);
+        }
+    };
 
-  Expr *getExpr() { return E; }
 
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
 };
 
 #endif
