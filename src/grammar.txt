@@ -1,8 +1,5 @@
-<MainGoal> ::= (<Goal> | <IfElse> | <Loop>)*
-<IfElse> ::= <If> <ElIf> <Else>
-<If> ::= ("if " <Assign> ": begin " <Body> " end")
-<ElIf> ::= (" elif " <Assign> ": begin " <Body> " end")*
-<Else> ::= (" else: begin " <Body> " end")?
+<MainGoal> ::= <Goal> | <IfElse> | <Loop>
+<IfElse> ::= ("if " <Assign> ": begin " <Body> " end") (" elif " <Assign> ": begin " <Body> " end")* (" else: begin " <Body> " end")?
 <Loop> ::= ("loopc " <Assign> ": begin " <Body> " end")
 <Body> ::= (<EquSoft> ";")+
 <Goal> ::= (<Equalization> ";")*
