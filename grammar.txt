@@ -1,0 +1,16 @@
+<GSM> ::= (<Declaration> | <Assign> | <IfElse> | <Loop>)*
+<Declaration> ::= "int" <ID> ("," <ID>)* ("=" <Expression> ("," <Expression>)*)? ";"
+<Assign> ::= <ID> ("=" | "+=" | "*=" | "/=" | "-=" | "%=") <Expression> ";"
+<IfElse> ::= ("if" <Expression> ":" "begin" (<Assign>)* "end") ("elif" <Expression> ":" "begin" (<Assign>)* "end")* ("else" ":" "begin" (<Assign>)* "end")?
+<Loop> ::= "loopc" <Expression> ":" "begin" (<Assign>)* "end"
+<Expression> ::= <Disjunction> ("or" <Disjunction>)*
+<Disjunction> ::= <Conjunction> ("and" <Conjunction>)*
+<Conjunction> ::= <Equality> (("==" | "!=") <Equality>)*
+<Equality> ::= <SoftComparison> ((">=" | "<=" ) <SoftComparison>)*
+<SoftComparison> ::= <HardComparison> ((">" | "<" ) <HardComparison>)*
+<HardComparison> ::= <PlusMinus> (("+" | "-") <PlusMinus>)*
+<PlusMinus> ::= <Term> (("*" | "/" | "%") <Term>)*
+<Term> ::= <Factor> ("^" <Factor>)*
+<Factor> ::= <ID> | <Number> | "(" <Expression> ")"
+<ID> ::= ([a-z] | [A-Z])+
+<Number> ::= ([0-9])+

@@ -4,34 +4,29 @@
 
 namespace {
 class InputCheck : public ASTVisitor {
-// StringSet to store declared variables
-  llvm::StringSet<> Scope; 
-// Flag to indicate if an error occurred
-  bool HasError; 
-// Enum to represent error types: Twice - variable declared twice, Not - variable not declared
-  enum ErrorType { Twice, Not }; 
+  llvm::StringSet<> Scope; // StringSet to store declared variables
+  bool HasError; // Flag to indicate if an error occurred
+
+  enum ErrorType { Twice, Not }; // Enum to represent error types: Twice - variable declared twice, Not - variable not declared
+
   void error(ErrorType ET, llvm::StringRef V) {
     // Function to report errors
     llvm::errs() << "Variable " << V << " is "
                  << (ET == Twice ? "already" : "not")
                  << " declared\n";
-    // Set error flag to true
-    HasError = true; 
+    HasError = true; // Set error flag to true
   }
 
 public:
-// Constructor
-  InputCheck() : HasError(false) {} 
+  InputCheck() : HasError(false) {} // Constructor
 
-// Function to check if an error occurred
-  bool hasError() { return HasError; } 
+  bool hasError() { return HasError; } // Function to check if an error occurred
 
   // Visit function for GSM nodes
   virtual void visit(GSM &Node) override { 
     for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
     {
-      // Visit each child node
-      (*I)->accept(*this); 
+      (*I)->accept(*this); // Visit each child node
     }
   };
 
@@ -94,29 +89,36 @@ public:
   };
 
   virtual void visit(Declaration &Node) override {
-    for (auto I = Node.begin(), E = Node.end(); I != E;
+    for (auto I = Node.beginVars(), E = Node.endVars(); I != E;
          ++I) {
       if (!Scope.insert(*I).second)
-        // If the insertion fails (element already exists in Scope), report a "Twice" error
-        error(Twice, *I); 
+        error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
     }
-    if (Node.getExpr())
-      // If the Declaration node has an expression, recursively visit the expression node
-      Node.getExpr()->accept(*this); 
+
+    if(Node.beginExprs())
+    {
+    for (auto I = Node.beginExprs(),E = Node.endExprs();I != E ; ++I)
+    {
+      (*I)->accept(*this);
+    }
+    }
+
+    // if (Node.getExpr())
+    //   Node.getExpr()->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
   };
+
+  virtual void visit(IfElse &) override {}; 
+
+  virtual void visit(Loop &) override {};
 };
 }
 
 bool Sema::semantic(AST *Tree) {
   if (!Tree)
-    // If the input AST is not valid, return false indicating no errors
-    return false; 
+    return false; // If the input AST is not valid, return false indicating no errors
 
-   // Create an instance of the InputCheck class for semantic analysis
-  InputCheck Check;
-   // Initiate the semantic analysis by traversing the AST using the accept function
-  Tree->accept(Check);
+  InputCheck Check; // Create an instance of the InputCheck class for semantic analysis
+  Tree->accept(Check); // Initiate the semantic analysis by traversing the AST using the accept function
 
-   // Return the result of Check.hasError() indicating if any errors were detected during the analysis
-  return Check.hasError();
+  return Check.hasError(); // Return the result of Check.hasError() indicating if any errors were detected during the analysis
 }

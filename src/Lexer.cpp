@@ -7,7 +7,7 @@ namespace charinfo
     LLVM_READNONE inline bool isWhitespace(char c)
     {
         return c == ' ' || c == '\t' || c == '\f' || c == '\v' ||
-            c == '\r' || c == '\n';
+               c == '\r' || c == '\n';
     }
 
     LLVM_READNONE inline bool isDigit(char c)
@@ -19,6 +19,7 @@ namespace charinfo
     {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
+
     LLVM_READNONE inline bool isSpecialCharacter(char c)
     {
         return c == '=' || c == '+' || c == '-' || c == '*' || c == '/' 
@@ -27,19 +28,22 @@ namespace charinfo
     }
 }
 
-void Lexer::next(Token &token) {
-    while (*BufferPtr && charinfo::isWhitespace(*BufferPtr)) {
+void Lexer::next(Token &token)
+{
+    while (*BufferPtr && charinfo::isWhitespace(*BufferPtr))
+    {
         ++BufferPtr;
     }
     // make sure we didn't reach the end of input
-    if (!*BufferPtr) {
+    if (!*BufferPtr)
+    {
         token.Kind = Token::eoi;
         return;
     }
     // collect characters and check for keywords or ident
     if (charinfo::isLetter(*BufferPtr))
     {
-        const char* end = BufferPtr + 1;
+        const char *end = BufferPtr + 1;
         while (charinfo::isLetter(*end))
             ++end;
         llvm::StringRef Name(BufferPtr, end - BufferPtr);
@@ -71,7 +75,7 @@ void Lexer::next(Token &token) {
     // check for numbers
     else if (charinfo::isDigit(*BufferPtr))
     {
-        const char* end = BufferPtr + 1;
+        const char *end = BufferPtr + 1;
         while (charinfo::isDigit(*end))
             ++end;
         formToken(token, end, Token::number);
@@ -80,7 +84,7 @@ void Lexer::next(Token &token) {
     // check for special characters
     else if (charinfo::isSpecialCharacter(*BufferPtr))
     {
-        const char* end = BufferPtr + 1;
+        const char *end = BufferPtr + 1;
         while (charinfo::isSpecialCharacter(*end))
             ++end;
         llvm::StringRef Name(BufferPtr, end - BufferPtr);
@@ -191,7 +195,7 @@ void Lexer::next(Token &token) {
             formToken(token, BufferPtr + 1, Token::unknown);
         }
         return;
-    }
+    }    
     // check for unknown characters
     else
     {
@@ -203,7 +207,7 @@ void Lexer::next(Token &token) {
 }
 
 void Lexer::formToken(Token &Tok, const char *TokEnd,
-    Token::TokenKind Kind)
+                      Token::TokenKind Kind)
 {
     Tok.Kind = Kind;
     Tok.Text = llvm::StringRef(BufferPtr, TokEnd - BufferPtr);

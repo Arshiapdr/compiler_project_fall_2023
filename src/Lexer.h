@@ -13,42 +13,42 @@ class Token
 public:
     enum TokenKind : unsigned short
     {
-        eoi,     // end of input
+        eoi, // end of input
         unknown, // in case of error at the lexical level
-        ident, //ID
-        number,// Number
+        ident, // ID
+        number, // Number
         equal, // =
         plus_equal, // +=
         minus_equal, // -=
         mult_equal, // *=
         div_equal, // /=
         mod_equal, // %=
-        is_equal,// ==
-        is_not_equal,// !=
+        is_equal, // ==
+        is_not_equal, // !=
         soft_comp_greater, // >=
         soft_comp_lower, // <=
         hard_comp_greater, // >
         hard_comp_lower, // <
         comma, // ,
-        semicolon,// ;
-        plus,// +
-        minus,// -
+        semicolon, // ;
+        plus, // +
+        minus, // -
         star, // *
         slash, // /
         mod, // %
         power, // ^
-        colon,//:
-        l_paren,// (
-        r_paren,// )
-        KW_int,// int
-        KW_begin,// begin
+        colon, // :
+        l_paren, // (
+        r_paren, // )
+        KW_int, // int
+        KW_begin, // begin
         KW_end, // end
-        KW_if,// if
-        KW_elif,// elif
-        KW_else, //else
-        KW_loopc,// loopc
+        KW_if, // if
+        KW_elif, // elif
+        KW_else, // else
+        KW_loopc, // loopc
         KW_logical_or, // or
-        KW_logical_and,// and
+        KW_logical_and // and
     };
 
 private:
@@ -60,35 +60,31 @@ public:
     llvm::StringRef getText() const { return Text; }
 
     // to test if the token is of a certain kind
-    bool is(TokenKind K) const {
-        return Kind == K;
-    }
+    bool is(TokenKind K) const { return Kind == K; }
     bool isOneOf(TokenKind K1, TokenKind K2) const
     {
         return is(K1) || is(K2);
     }
     template <typename... Ts>
-    bool isOneOf(TokenKind K1, TokenKind K2, Ts... Ks) const
-    {
-        return is(K1) || isOneOf(K2, Ks...);
-    }
+    bool isOneOf(TokenKind K1, TokenKind K2, Ts... Ks)
+        const { return is(K1) || isOneOf(K2, Ks...); }
 };
 
 class Lexer
 {
-    const char* BufferStart; // pointer to the beginning of the input
-    const char* BufferPtr;   // pointer to the next unprocessed character
+    const char *BufferStart; // pointer to the beginning of the input
+    const char *BufferPtr;   // pointer to the next unprocessed character
 
 public:
-    Lexer(const llvm::StringRef& Buffer)
+    Lexer(const llvm::StringRef &Buffer)
     {
         BufferStart = Buffer.begin();
         BufferPtr = BufferStart;
     }
 
-    void next(Token& token); // return the next token
+    void next(Token &token); // return the next token
 
 private:
-    void formToken(Token& Result, const char* TokEnd, Token::TokenKind Kind);
+    void formToken(Token &Result, const char *TokEnd, Token::TokenKind Kind);
 };
 #endif

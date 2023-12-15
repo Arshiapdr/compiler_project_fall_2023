@@ -4,201 +4,251 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
+// Forward declarations of classes used in the AST
 class AST;
 class Expr;
+class GSM;
 class Factor;
 class BinaryOp;
-class WithDecl;
 class Assignment;
-class Group;
-/*
-In C++, = 0 after a virtual function declaration signifies that the function is a pure virtual function.
-A pure virtual function is a virtual function that has no implementation in the base class and must be overridden
-by any concrete (non-abstract) derived class. A class containing at least one pure virtual function becomes an abstract class,
-meaning it cannot be instantiated directly; it serves as a base class
-for other classes that provide implementations for all its pure virtual functions.
-*/
-class ASTVisitor {
-public:
-    virtual void visit(AST&) {};
-    virtual void visit(Expr&) {};
-    virtual void visit(Group&) = 0;
-    virtual void visit(Factor&) = 0;
-    virtual void visit(BinaryOp&) = 0;
-    virtual void visit(WithDecl&) = 0;
-};
-/*
-*     Abstract base class for all AST nodes.
-    Contains a pure virtual function accept that accepts an ASTVisitor
-    as an argument. It's meant to be overridden in derived classes.
-*/
+class Declaration;
+class IfElse;
+class Loop;
 
-class AST {
-public:
-    virtual ~AST() {}// When a class is designed to be inherited
-    //(as AST appears to be in the provided code), it's a good 
-    //practice to declare its destructor as virtual.
-    //This allows proper destruction of derived class objects
-    //when they are destroyed through a pointer to the base class.
-    virtual void accept(ASTVisitor& V) = 0;
-};
-
-class Expr : public AST {
-public:
-    Expr() {}
-};
-class Group : public Expr
+// ASTVisitor class defines a visitor pattern to traverse the AST
+class ASTVisitor
 {
-    using ExprVector = llvm::SmallVector<Expr*>;
-
-private:
-    ExprVector exprs;                          // Stores the list of expressions
-
 public:
-    Group(llvm::SmallVector<Expr*> exprs) : exprs(exprs) {}
-
-    llvm::SmallVector<Expr*> getExprs() { return exprs; }
-
-    ExprVector::const_iterator begin() { return exprs.begin(); }
-
-    ExprVector::const_iterator end() { return exprs.end(); }
-
-    virtual void accept(ASTVisitor& V) override
-    {
-        V.visit(*this);
-    }
+  // Virtual visit functions for each AST node type
+  virtual void visit(AST &) {}               // Visit the base AST node
+  virtual void visit(Expr &) {}              // Visit the expression node
+  virtual void visit(GSM &) = 0;             // Visit the group of expressions node
+  virtual void visit(Factor &) = 0;          // Visit the factor node
+  virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
+  virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
+  virtual void visit(Declaration &) = 0;     // Visit the variable declaration node
+  virtual void visit(IfElse &) = 0;          // Visit the ifelse node
+  virtual void visit(Loop &) = 0;            // Visit the loop node
 };
-class Factor : public Expr {
-public:
-    enum ValueKind { Ident, Number };
 
-private:
-    ValueKind Kind;
-    llvm::StringRef Val;
-
-
-    /*
-    *  In this language numbers and variables are treated almost identically,
-       so we decided to create only one AST node class to represent them.
-       The main reason is we only have 1 type variables (int) and everywhere in
-       out language when we have [a Z] it is defenitley a reference to a variable.
-    */
-public:
-    Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val)
-    {}
-    ValueKind getKind() {
-        return Kind;
-    }
-    llvm::StringRef getVal() {
-        return Val;
-    }
-    virtual void accept(ASTVisitor& V) override {
-        V.visit(*this);
-    }
-};
-// represents arithmetic expression
-class BinaryOp : public Expr {
-public:
-    enum Operator { Plus, Minus, Mul, Div,equal,
-    plus_equal,mul_equal,div_equal,minus_equal,
-    logical_or,logical_and,is_equal,is_not_equal,
-    soft_comp_greater,soft_comp_lower,
-    hard_comp_greater,soft_comp_lower,
-    modulo,powerr,l_paren,r_paren,
-    mod_equal, hard_comp_lower
-    };
-
-private:
-    Expr* Left;
-    Expr* Right;
-    Operator Op;
-
-public:
-    BinaryOp(Operator Op, Expr* L, Expr* R) : Op(Op), Left(L), Right(R)
-    {}
-    Expr* getLeft()
-    {
-        return Left;
-    }
-    Expr* getRight()
-    {
-        return Right;
-    }
-    Operator getOperator()
-    {
-        return Op;
-    }
-    virtual void accept(ASTVisitor& V) override
-    {
-        V.visit(*this);
-    }
-};
-//Represents a declaration node in the AST,
-//where variables are declared with an expression.
-class WithDecl : public AST
+// AST class serves as the base class for all AST nodes
+class AST
 {
-    //type definition
-    using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-    VarVector Vars;
-    Expr* E;
-
 public:
-    WithDecl(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr* E) : Vars(Vars), E(E)
-    {}
-    VarVector::const_iterator begin()
-    {
-        return Vars.begin();
-    }
-    VarVector::const_iterator end()
-    {
-        return Vars.end();
-    }
-    Expr* getExpr()
-    {
-        return E;
-    }
-    virtual void accept(ASTVisitor& V) override
-    {
-        V.visit(*this);
-    }
-    class Assignment : public Expr
+  virtual ~AST() {}
+  virtual void accept(ASTVisitor &V) = 0; // Accept a visitor for traversal
+};
+
+// Expr class represents an expression in the AST
+class Expr : public AST
 {
+public:
+  Expr() {}
+};
+
+// GSM class represents a group of expressions in the AST
+class GSM : public Expr
+{
+  using ExprVector = llvm::SmallVector<Expr *>;
+
 private:
-  Factor *Left;                             // Left-hand side factor (identifier)
-  Expr *Right;                              // Right-hand side expression
+  ExprVector exprs; // Stores the list of expressions
 
 public:
-  Assignment(Factor *L, Expr *R) : Left(L), Right(R) {}
+  GSM(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
 
-  Factor *getLeft() { return Left; }
+  llvm::SmallVector<Expr *> getExprs() { return exprs; }
 
-  Expr *getRight() { return Right; }
+  ExprVector::const_iterator begin() { return exprs.begin(); }
+
+  ExprVector::const_iterator end() { return exprs.end(); }
 
   virtual void accept(ASTVisitor &V) override
   {
     V.visit(*this);
   }
 };
-    class Assignment : public Expr
-    {
-    private:
-        Factor* Left;                             // Left-hand side factor (identifier)
-        Expr* Right;                              // Right-hand side expression
 
-    public:
-        Assignment(Factor* L, Expr* R) : Left(L), Right(R) {}
+// Factor class represents a factor in the AST (either an identifier or a number)
+class Factor : public Expr
+{
+public:
+  enum ValueKind
+  {
+    Ident,
+    Number
+  };
 
-        Factor* getLeft() { return Left; }
+private:
+  ValueKind Kind; // Stores the kind of factor (identifier or number)
+  llvm::StringRef Val; // Stores the value of the factor
 
-        Expr* getRight() { return Right; }
+public:
+  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
 
-        virtual void accept(ASTVisitor& V) override
-        {
-            V.visit(*this);
-        }
-    };
+  ValueKind getKind() { return Kind; }
 
+  llvm::StringRef getVal() { return Val; }
 
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// BinaryOp class represents a binary operation in the AST (plus, minus, multiplication, division)
+class BinaryOp : public Expr
+{
+public:
+  enum Operator
+  {
+    Or,
+    And,
+    IsEq,
+    IsNEq,
+    GrEq,
+    LoEq,
+    Gr,
+    Lo,
+    Plus,
+    Minus,
+    Mul,
+    Div,
+    Mod,
+    Pow
+  };
+
+private:
+  Expr *Left; // Left-hand side expression
+  Expr *Right; // Right-hand side expression
+  Operator Op; // Operator of the binary operation
+
+public:
+  BinaryOp(Operator Op, Expr *L, Expr *R) : Op(Op), Left(L), Right(R) {}
+
+  Expr *getLeft() { return Left; }
+
+  Expr *getRight() { return Right; }
+
+  Operator getOperator() { return Op; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// Assignment class represents an assignment expression in the AST
+class Assignment : public Expr
+{
+public:
+  enum Operator
+  {
+    Eq,
+    PlEq,
+    MulEq,
+    DivEq,
+    MinEq,
+    ModEq
+  };
+  
+private:
+  Factor *Left; // Left-hand side factor (identifier)
+  Expr *Right; // Right-hand side expression
+  Operator Op; // Operator of the assignment operation
+
+public:
+  Assignment(Operator Op, Factor *L, Expr *R) : Op(Op), Left(L), Right(R) {}
+
+  Factor *getLeft() { return Left; }
+
+  Expr *getRight() { return Right; }
+
+  Operator getOperator() { return Op; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// Declaration class represents a variable declaration with an initializer in the AST
+class Declaration : public Expr
+{
+  using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
+  using ExprVector = llvm::SmallVector<Expr *>;
+
+  VarVector Vars; // Stores the list of variables
+  ExprVector Exprs; // Stores the list of expressions   
+
+public:
+  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *> Exprs) : Vars(Vars), Exprs(Exprs) {}
+
+  VarVector::const_iterator beginVars() { return Vars.begin(); }
+
+  VarVector::const_iterator endVars() { return Vars.end(); }
+
+  ExprVector::const_iterator beginExprs() { return Exprs.begin(); }
+
+  ExprVector::const_iterator endExprs() { return Exprs.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// IfElse class represents a condition in the AST
+class IfElse : public Expr
+{
+  using ExprVector = llvm::SmallVector<Expr *>;
+  using Assign2DVector = llvm::SmallVector<llvm::SmallVector<Assignment *>>;
+
+  ExprVector Exprs; // Stores the list of expressions   
+  Assign2DVector Assigns; // Stores the 2d array of assignments  
+  bool hasElse = false; // to check if the node has else statement NEW
+
+public:
+  //IfElse(llvm::SmallVector<Expr *> Exprs, llvm::SmallVector<llvm::SmallVector<Assignment *>> Assigns,) : Exprs(Exprs), Assigns(Assigns) {}
+  IfElse(ExprVector Exprs, Assign2DVector Assigns,bool hasElse) : Exprs(Exprs), Assigns(Assigns),hasElse(hasElse) {}
+
+  ExprVector::const_iterator beginExprs() { return Exprs.begin(); }
+
+  ExprVector::const_iterator endExprs() { return Exprs.end(); }
+
+  // ERROR PRONE
+  Assign2DVector::const_iterator beginAssigns2D() { return Assigns.begin(); }
+
+  Assign2DVector::const_iterator endAssigns2D() { return Assigns.end(); }
+
+  bool getHasElse() {return hasElse;};//NEW
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// Loop class represents a loop in the AST
+class Loop : public Expr
+{
+  using AssignVector = llvm::SmallVector<Assignment *>; 
+  AssignVector Assigns; // Stores the list of assignments  
+  Expr *E; // Expression
+
+public:
+  Loop(Expr *E, llvm::SmallVector<Assignment *> Assigns) : E(E), Assigns(Assigns) {}
+
+  Expr *getCondition() { return E; }
+
+  AssignVector::const_iterator begin() { return Assigns.begin(); }
+
+  AssignVector::const_iterator end() { return Assigns.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
 };
 
 #endif
