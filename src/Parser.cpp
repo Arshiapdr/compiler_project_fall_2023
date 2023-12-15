@@ -124,30 +124,23 @@ Expr *Parser::parseDeclaration()
     {
         advance();
         E = parseExpression();
-        if (E) {
-            Exprs.push_back(E);
-            exprs_count += 1;
-        }
-        else {
-            goto _error2;
-        }
+
+        Exprs.push_back(E);
+        exprs_count += 1;
 
         while (Tok.is(Token::comma))
         {
             advance();
             E = parseExpression();
-            if (E) {
-                Exprs.push_back(E);
-                exprs_count += 1;
-            } 
-            else {
-                goto _error2;
-            }
+            Exprs.push_back(E);
+            exprs_count += 1;
         }
     }
 
-    if (!Tok.is(Token::semicolon) || exprs_count > vars_count)
+    if (!Tok.is(Token::semicolon) || exprs_count > vars_count){
+        error();
         goto _error2;
+    }
 
     return new Declaration(Vars, Exprs);
 _error2: // TODO: Check this later in case of error :)
