@@ -1,21 +1,16 @@
-<MainGoal> ::= <Goal> | <IfElse> | <Loop>
-<IfElse> ::= ("if " <Assign> ": begin " <Body> " end") (" elif " <Assign> ": begin " <Body> " end")* (" else: begin " <Body> " end")?
-<Loop> ::= ("loopc " <Assign> ": begin " <Body> " end")
-<Body> ::= (<EquSoft> ";")+
-<Goal> ::= (<Equalization> ";")*
-<Equalization> ::= <EquHard> | <EquSoft>
-<EquHard> ::= (<HardDefinition>) | (<HardDefinition> (" = ") <Assign> (", " <Assign>)*)
-<EquSoft> ::= (<SoftDefinition> (" = " | " += " | " *= " | " /= " | " -= " | " %= ") <Assign> (", " <Assign>)*)
-<HardDefinition> ::= "int " <ID> (", " <ID>)*
-<SoftDefinition> ::= <ID> (", " <ID>)*
-<Assign> ::= <Disjunction> (" or " <Disjunction>)*
-<Disjunction> ::= <Conjunction> (" and " <Conjunction>)*
-<Conjunction> ::= <IsEqual> ((" == " | " != ") <IsEqual>)*
-<IsEqual> ::= <SoftComparison> ((" >= " | " <= " ) <SoftComparison>)*
-<SoftComparison> ::= <HardComparison> ((" > " | " < " ) <HardComparison>)*
-<HardComparison> ::= <Expression> ((" + " | " - ") <Expression>)*
-<Expression> ::= <Term> ((" * " | " / " | " % ") <Term>)*
-<Term> ::= <Factor> (" ^ " <Factor>)*
-<Factor> ::= <ID> | <Number> | "(" <Assign> ")"
-<ID> ::= ( [a-z] | [A-Z])+
+<GSM> ::= (<Declaration> | <Assign> | <IfElse> | <Loop>)*
+<Declaration> ::= "int" <ID> ("," <ID>)* ("=" <Expression> ("," <Expression>)*)? ";"
+<Assign> ::= <ID> ("=" | "+=" | "*=" | "/=" | "-=" | "%=") <Expression> ";"
+<IfElse> ::= ("if" <Expression> ":" "begin" (<Assign>)* "end") ("elif" <Expression> ":" "begin" (<Assign>)* "end")* ("else" ":" "begin" (<Assign>)* "end")?
+<Loop> ::= "loopc" <Expression> ":" "begin" (<Assign>)* "end"
+<Expression> ::= <Disjunction> ("or" <Disjunction>)*
+<Disjunction> ::= <Conjunction> ("and" <Conjunction>)*
+<Conjunction> ::= <Equality> (("==" | "!=") <Equality>)*
+<Equality> ::= <SoftComparison> ((">=" | "<=" ) <SoftComparison>)*
+<SoftComparison> ::= <HardComparison> ((">" | "<" ) <HardComparison>)*
+<HardComparison> ::= <PlusMinus> (("+" | "-") <PlusMinus>)*
+<PlusMinus> ::= <Term> (("*" | "/" | "%") <Term>)*
+<Term> ::= <Factor> ("^" <Factor>)*
+<Factor> ::= <ID> | <Number> | "(" <Expression> ")"
+<ID> ::= ([a-z] | [A-Z])+
 <Number> ::= ([0-9])+
