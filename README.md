@@ -7,9 +7,7 @@ cd build
 cmake ..
 make
 cd src
-./gsm "<the input you want to be compiled>" > gsm.ll
-llc --filetype=obj -o=gsm.o gsm.ll
-clang -o gsmbin gsm.o ../../rtGSM.c
+./gsm "<the input you want to be compiled>"
 ```
 ## Sample Input Codes With Their Outputs
 Input Code 1
