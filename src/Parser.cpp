@@ -21,13 +21,21 @@ AST *Parser::parseGSM()
             if (declaration)
                 exprs.push_back(declaration);
             else
-                break;
-
-            if (expect(Token::semicolon))
+                goto _error1; //new
+                // break;
+            
+            
+            if (!Tok.is(Token::semicolon))
             {
                 error();
+                goto _error1; //new
             }
-            advance();
+
+            // if (expect(Token::semicolon))
+            // {
+            //     error();
+            // }
+            // advance();
             break;
 
         case Token::ident:
@@ -38,20 +46,30 @@ AST *Parser::parseGSM()
             if (!Tok.is(Token::semicolon))
             {
                 error();
+                goto _error1; //new
             }
+
             if (assign)
                 exprs.push_back(assign);
             else
-                error();
-            if(expect(Token::semicolon))
-                error();
-            advance();
+                goto _error1; //new
+                // error();
+
+            // if(expect(Token::semicolon))
+            //     error();
+            // advance();
             break;
 
 
         case Token::KW_if:
             Expr *ifelse;
             ifelse = parseIfElse();
+
+            // if (!Tok.is(Token::KW_end))
+            // {
+            //     error();
+            //     goto _error1; //new
+            // }
 
             if (ifelse)
                 exprs.push_back(ifelse);
@@ -63,6 +81,12 @@ AST *Parser::parseGSM()
             Expr *loop;
             loop = parseLoop();
 
+            if (!Tok.is(Token::KW_end))
+            {
+                error();
+                goto _error1; //new
+            }
+
             if (loop)
                 exprs.push_back(loop);
             else
@@ -70,10 +94,12 @@ AST *Parser::parseGSM()
             break;
 
         default:
-            error();
+            goto _error1; //new
+            // error();
             break;
         }
-        //advance(); // TODO: watch this part
+
+        advance(); // TODO: watch this part
     }
     return new GSM(exprs);
 _error1:
@@ -90,8 +116,8 @@ Expr *Parser::parseDeclaration()
     llvm::SmallVector<llvm::StringRef, 8> Vars;
     llvm::SmallVector<Expr *> Exprs;
 
-    if (expect(Token::KW_int)){
-        error();
+    if (!Tok.is(Token::KW_int)){
+        // error();
         goto _error2;
     }
 
@@ -111,7 +137,7 @@ Expr *Parser::parseDeclaration()
         advance();
 
         if (expect(Token::ident)){
-            error();
+            // error();
             goto _error2;
         }
 
@@ -137,8 +163,8 @@ Expr *Parser::parseDeclaration()
         }
     }
 
-    if (!Tok.is(Token::semicolon) || exprs_count > vars_count){
-        error();
+    if (expect(Token::semicolon) || exprs_count > vars_count){
+        // error();
         goto _error2;
     }
 
@@ -244,7 +270,11 @@ Expr *Parser::parseIfElse()
     {
         error();
     }
-    advance();
+
+    if (peek().is(Token::KW_elif)) {
+        advance(); //new
+    }
+    // advance(); 
     
     while (Tok.is(Token::KW_elif)) {
         //ERROR PRONE
@@ -265,23 +295,37 @@ Expr *Parser::parseIfElse()
         temp_assignments.clear();
         
         while (!Tok.is(Token::KW_end)){
-            if (Tok.is(Token::ident)) {
-            A = parseAssign();
-
-            if (!Tok.is(Token::semicolon))
+            if (Tok.is(Token::ident)) 
             {
+                A = parseAssign();
+
+                if (!Tok.is(Token::semicolon))
+                {
+                    error();
+                }
+                advance();
+                if (A)
+                    temp_assignments.push_back(A);
+                else
+                    error();
+            } 
+
+            else {
                 error();
             }
-            advance();
-            if (A)
-                temp_assignments.push_back(A);
-            else
-                error();
-        } else error();
         }
 
         assignments.push_back(temp_assignments);
-        advance();
+        if (expect(Token::KW_end))
+        {
+            error();
+        }
+
+        if (peek().is(Token::KW_else)) {
+            advance(); //new
+        }
+        // advance();
+
         // if (!Tok.is(Token::KW_end))
         // {
         //     error();
@@ -319,17 +363,26 @@ Expr *Parser::parseIfElse()
                     temp_assignments.push_back(A);
                 else
                     error();
-            } else error();
+            } 
+            else {
+                error();
+            }
         }
 
         assignments.push_back(temp_assignments);
-        advance();
+        // advance(); //commented
         // if (!Tok.is(Token::KW_end))
         // {
         //     error();
         //     goto _error3;
         // }
     }
+
+    if (expect(Token::KW_end)){
+        // error();
+        goto _error3;
+    }
+
     return new IfElse(expressions, assignments, hasElse);// NEW
 _error3:
     while (Tok.getKind() != Token::eoi)
@@ -408,7 +461,7 @@ Expr *Parser::parseLoop()
         error();
         goto _error4;
     }
-    advance();
+    // advance(); //commented
 
     return new Loop(E, assignments);
 _error4:
@@ -559,10 +612,12 @@ Expr *Parser::parseFactor()
     case Token::l_paren:
         advance();
         Res = parseExpression();
-        if (!expect(Token::r_paren)){
-            advance();
+        if (!consume(Token::r_paren)) //new
             break;
-        }
+        // if (!expect(Token::r_paren)){
+        //     advance();
+        //     break;
+        // }
     default: // error handling
         if (!Res)
             error();
