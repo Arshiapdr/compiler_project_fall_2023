@@ -590,7 +590,7 @@ void CodeGen::computeDead()
   }
   for (const auto &var : deadVars)
   {
-    llvm::outs() << "dead " << var << "\n";
+    llvm::outs() << "variable '" << var << "' is dead." << "\n";
   }
 
 }
