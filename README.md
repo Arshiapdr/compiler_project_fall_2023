@@ -52,7 +52,6 @@ declare void @gsm_write.1(i32)
 ```
 <Note that in the above code, there is no dead variable to eliminate>
 
-## Sample Input Codes With Their Outputs
 Input Code 2
 ```
 int result;
