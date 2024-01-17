@@ -1,4 +1,4 @@
-Compiler Final Project - Fall 2023
+##Compiler Final Project - Fall 2023
 [Arshia Paridari - Pouria Yazdani]
 
 ## Running Instructions
@@ -21,7 +21,7 @@ int result;
 result = a + b;
 a = 2;"
 ```
-output IR with implementing dead code elimination
+output IR 1 with implementing dead code elimination
 ```
 ; ModuleID = 'calc.expr'
 source_filename = "calc.expr"
