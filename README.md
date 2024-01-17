@@ -1,3 +1,6 @@
+Compiler Final Project - Fall 2023
+[Arshia Paridari - Pouria Yazdani]
+
 ## How to run?
 ```
 mkdir build
