@@ -1,5 +1,4 @@
 ## Compiler Final Project - Fall 2023
-[Arshia Paridari - Pouria Yazdani]
 
 ## Running Instructions
 ```
