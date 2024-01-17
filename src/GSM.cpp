@@ -29,6 +29,11 @@ int main(int argc, const char **argv)
     // Parse the input expression and generate an abstract syntax tree (AST).
     AST *Tree = Parser.parse();
 
+
+
+
+    
+
     // Check if parsing was successful or if there were any syntax errors.
     if (!Tree || Parser.hasError())
     {
@@ -46,6 +51,13 @@ int main(int argc, const char **argv)
 
     // Generate code for the AST using a code generator.
     CodeGen CodeGenerator;
+    //new
+    CodeGenerator.collectIdentifiers(Tree);
+    CodeGenerator.computeDepends(Tree);
+    CodeGenerator.computeDead();
+
+    
+
     CodeGenerator.compile(Tree);
 
     // The program executed successfully.

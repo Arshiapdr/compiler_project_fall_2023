@@ -31,6 +31,7 @@ public:
   virtual void visit(Loop &) = 0;            // Visit the loop node
 };
 
+
 // AST class serves as the base class for all AST nodes
 class AST
 {
@@ -180,6 +181,7 @@ class Declaration : public Expr
 
   VarVector Vars; // Stores the list of variables
   ExprVector Exprs; // Stores the list of expressions   
+  // boolean visit = True + getter
 
 public:
   Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *> Exprs) : Vars(Vars), Exprs(Exprs) {}
