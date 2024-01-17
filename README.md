@@ -7,7 +7,7 @@ cd build
 cmake ..
 make
 cd src
-./gsm "<the input you want to be compiled>"
+./gsm "<the input code you want to be compiled>"
 ```
 ## Sample Input Codes With Their Outputs
 Input Code 1
