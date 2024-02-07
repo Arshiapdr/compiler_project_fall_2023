@@ -8,29 +8,12 @@
 #include "llvm/ADT/STLExtras.h" 
 #include "llvm/Support/raw_ostream.h"
 
-  /*
-
-  need list of all variables  depends[][]   a->vector  b->vector  c->vector  [String][Stringlist]
-
-  override assignment
-
-  override declaration
-
-  AST performElimination(){
-    traverse 1 of AST -> compute depends     compute depends
-
-    traverse 2 of AST -> tag dead assignments and declerations visit -> false
-  }
-  
-  */
-
 using namespace llvm;
 
 llvm::SmallVector<llvm::StringRef> allVars;
 StringMap<llvm::SmallVector<StringRef>> dependsMap;
 llvm::SmallVector<llvm::StringRef> deadVars;
 llvm::SmallVector<llvm::StringRef> alive;
-
 
 // Define a visitor class for generating LLVM IR from the AST.
 namespace
@@ -39,9 +22,9 @@ namespace
   {
     public:
   
-    virtual void visit(GSM &Node) override
+    virtual void visit(AP &Node) override
     {
-      // Iterate over the children of the GSM node and visit each child.
+      // Iterate over the children of the AP node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         (*I)->accept(*this);
@@ -57,32 +40,26 @@ namespace
       }
     };
 
-
     virtual void visit(Assignment &) override {}; 
     virtual void visit(BinaryOp &) override {};
     virtual void visit(Factor &) override {}; 
     virtual void visit(Loop &) override {};
     virtual void visit(IfElse &) override {}; 
 
-
-
     void collect(AST *Tree)
     {
       Tree->accept(*this);
     }
-
   };
 
-  
-  
   class ComputeDepends : public ASTVisitor
   {   
     public:
       llvm::SmallVector<llvm::StringRef> depends; // auxilary variable to store dependencies of variables throughout taversing process of AST
 
-      virtual void visit(GSM &Node) override
+      virtual void visit(AP &Node) override
     {
-      // Iterate over the children of the GSM node and visit each child.
+      // Iterate over the children of the AP node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         (*I)->accept(*this);
@@ -109,7 +86,6 @@ namespace
           //do nothing since no dependency is found
           // depends.clear();
         }
-
       };
       
       virtual void visit(Factor &Node) override
@@ -155,12 +131,10 @@ namespace
           depends.clear();
 
         }
-      
       };
 
       virtual void visit(Loop &) override {};
       virtual void visit(IfElse &) override {};
-
 
     void compute(AST *Tree)
       {
@@ -171,8 +145,6 @@ namespace
           }
       Tree->accept(*this);
       }
-
-
   };
 
   class ToIRVisitor : public ASTVisitor
@@ -190,9 +162,7 @@ namespace
     FunctionType *CalcWriteFnTy;
     Function *CalcWriteFn;
 
-
     //llvm::SmallVector<llvm::StringRef> allVars;
-
 
   public:
     // Constructor for the visitor class.
@@ -225,10 +195,10 @@ namespace
       Builder.CreateRet(Int32Zero);
     }
 
-    // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    // Visit function for the AP node in the AST.
+    virtual void visit(AP &Node) override
     {
-      // Iterate over the children of the GSM node and visit each child.
+      // Iterate over the children of the AP node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         (*I)->accept(*this);
@@ -286,12 +256,12 @@ namespace
           // Create a store instruction to assign the value to the variable.
           Builder.CreateStore(val, nameMap[varName]);
 
-          // Create a function type for the "gsm_write" function.
+          // Create a function type for the "ap_write" function.
           CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-          // Create a function declaration for the "gsm_write" function.
-          CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+          // Create a function declaration for the "ap_write" function.
+          CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "ap_write", M);
 
-          // Create a call instruction to invoke the "gsm_write" function with the value.
+          // Create a call instruction to invoke the "ap_write" function with the value.
           CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
         }
       }
@@ -327,7 +297,6 @@ namespace
       // Visit the left-hand side of the binary operation and get its value.
       Node.getLeft()->accept(*this);
       Value *Left = V;     
-      
       
       // Visit the right-hand side of the binary operation and get its value.
       Node.getRight()->accept(*this);
@@ -510,7 +479,6 @@ namespace
       Builder.CreateBr(IfBB);
       // end of IfNotMet BB
 
-
       Builder.SetInsertPoint(MergeBB);
       // setCurr(MergeBB);
       };
@@ -549,15 +517,12 @@ namespace
   };
 }; // namespace
 
-
-
 // new funciton added
 void CodeGen::collectIdentifiers(AST *Tree)
 {
   IdentifiersCollector IdentifierCollector;
   IdentifierCollector.collect(Tree);
 }
-
 
 void CodeGen::computeDepends(AST *Tree){
   ComputeDepends computeDepends;
