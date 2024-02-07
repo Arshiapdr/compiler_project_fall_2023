@@ -22,8 +22,8 @@ public:
 
   bool hasError() { return HasError; } // Function to check if an error occurred
 
-  // Visit function for GSM nodes
-  virtual void visit(GSM &Node) override { 
+  // Visit function for AP nodes
+  virtual void visit(AP &Node) override { 
     for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
     {
       (*I)->accept(*this); // Visit each child node
@@ -102,9 +102,6 @@ public:
       (*I)->accept(*this);
     }
     }
-
-    // if (Node.getExpr())
-    //   Node.getExpr()->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
   };
 
   virtual void visit(IfElse &) override {}; 
