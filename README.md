@@ -12,13 +12,13 @@ cd src
 ## Introduction
 - In the designed language, the variables have values specified at compile time.
 - In the given input codes, the __result__ variable is defined with the default value first.
-- $${\color{red}Dead Variable:}$$ A variable that is not related to the __result__ and the value of the __result__ is not dependent on it, is a dead variable.
+- $${\color{red} Dead Variable}$$ A variable that is not related to the __result__ and the value of the __result__ is not dependent on it, is a dead variable.
   - For example in the below code, a is a Dead Variable:
   - ```
     int result;
     int a = (2 + 5) * 8;
     ```
-- __Live Variable:__ A variable that is related to the __result__ and the value of the __result__ depends on it, is a live variable.
+- $${\color{lightgreen} Live Variable}$$ A variable that is related to the __result__ and the value of the __result__ depends on it, is a live variable.
   - For example in the below code, a is a Live Variable:
   - ```
     int result;
