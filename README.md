@@ -11,7 +11,7 @@ cd src
 ```
 ## Introduction
 ```diff
-- salam
+salam
 ```
 - In the designed language, the variables have values specified at compile time.
 - In the given input codes, the __result__ variable is defined with the default value first.
