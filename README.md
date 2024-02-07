@@ -19,7 +19,8 @@ $${\color{red} Dead \space Variable}$$
     int result;
     int a = (2 + 5) * 8;
     ```
-- $${\color{lightgreen} Live \space Variable}$$ A variable that is related to the __result__ and the value of the __result__ depends on it, is a live variable.
+$${\color{lightgreen} Live \space Variable}$$ 
+- A variable that is related to the __result__ and the value of the __result__ depends on it, is a live variable.
   - For example in the below code, a is a Live Variable:
   - ```
     int result;
