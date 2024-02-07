@@ -1,8 +1,8 @@
-add_executable (gsm
-  GSM.cpp
+add_executable (ap
+  AP.cpp
   CodeGen.cpp
   Lexer.cpp
   Parser.cpp
   Sema.cpp
   )
-target_link_libraries(gsm PRIVATE ${llvm_libs})
+target_link_libraries(ap PRIVATE ${llvm_libs})
