@@ -7,7 +7,7 @@
 // Forward declarations of classes used in the AST
 class AST;
 class Expr;
-class GSM;
+class AP;
 class Factor;
 class BinaryOp;
 class Assignment;
@@ -22,7 +22,7 @@ public:
   // Virtual visit functions for each AST node type
   virtual void visit(AST &) {}               // Visit the base AST node
   virtual void visit(Expr &) {}              // Visit the expression node
-  virtual void visit(GSM &) = 0;             // Visit the group of expressions node
+  virtual void visit(AP &) = 0;             // Visit the group of expressions node
   virtual void visit(Factor &) = 0;          // Visit the factor node
   virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
   virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
@@ -47,8 +47,8 @@ public:
   Expr() {}
 };
 
-// GSM class represents a group of expressions in the AST
-class GSM : public Expr
+// AP class represents a group of expressions in the AST
+class AP : public Expr
 {
   using ExprVector = llvm::SmallVector<Expr *>;
 
@@ -56,7 +56,7 @@ private:
   ExprVector exprs; // Stores the list of expressions
 
 public:
-  GSM(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
+  AP(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
 
   llvm::SmallVector<Expr *> getExprs() { return exprs; }
 
@@ -211,7 +211,6 @@ class IfElse : public Expr
   bool hasElse = false; // to check if the node has else statement NEW
 
 public:
-  //IfElse(llvm::SmallVector<Expr *> Exprs, llvm::SmallVector<llvm::SmallVector<Assignment *>> Assigns,) : Exprs(Exprs), Assigns(Assigns) {}
   IfElse(ExprVector Exprs, Assign2DVector Assigns,bool hasElse) : Exprs(Exprs), Assigns(Assigns),hasElse(hasElse) {}
 
   ExprVector::const_iterator beginExprs() { return Exprs.begin(); }
@@ -223,7 +222,7 @@ public:
 
   Assign2DVector::const_iterator endAssigns2D() { return Assigns.end(); }
 
-  bool getHasElse() {return hasElse;};//NEW
+  bool getHasElse() {return hasElse;};
 
   virtual void accept(ASTVisitor &V) override
   {
