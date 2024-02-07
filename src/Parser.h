@@ -47,7 +47,7 @@ class Parser
         return false;
     }
 
-    AST *parseGSM();
+    AST *parseAP();
     Expr *parseDeclaration();
     Assignment *parseAssign();
     Expr *parseIfElse();
