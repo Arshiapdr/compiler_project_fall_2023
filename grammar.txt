@@ -1,4 +1,4 @@
-<GSM> ::= (<Declaration> | <Assign> | <IfElse> | <Loop>)*
+<AP> ::= (<Declaration> | <Assign> | <IfElse> | <Loop>)*
 <Declaration> ::= "int" <ID> ("," <ID>)* ("=" <Expression> ("," <Expression>)*)? ";"
 <Assign> ::= <ID> ("=" | "+=" | "*=" | "/=" | "-=" | "%=") <Expression> ";"
 <IfElse> ::= ("if" <Expression> ":" "begin" (<Assign>)* "end") ("elif" <Expression> ":" "begin" (<Assign>)* "end")* ("else" ":" "begin" (<Assign>)* "end")?
