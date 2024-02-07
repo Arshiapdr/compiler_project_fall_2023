@@ -10,6 +10,9 @@ cd src
 ./ap "<the input code you want to be compiled>"
 ```
 ## Introduction
+```diff
+- salam
+```
 - In the designed language, the variables have values specified at compile time.
 - In the given input codes, the __result__ variable is defined with the default value first.
   - __Dead Variable:__ A variable that is not related to the __result__ and the value of the __result__ is not dependent on it, is a dead variable.
