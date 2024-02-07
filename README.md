@@ -7,7 +7,7 @@ cd build
 cmake ..
 make
 cd src
-./gsm "<the input code you want to be compiled>"
+./ap "<the input code you want to be compiled>"
 ```
 ## Sample Input Codes With Their Outputs
 Input Code 1
@@ -36,16 +36,16 @@ entry:
   %7 = add nsw i32 %5, %6
   %8 = load i32, i32* %4, align 4
   store i32 %7, i32* %4, align 4
-  call void @gsm_write(i32 %7)
+  call void @ap_write(i32 %7)
   %9 = load i32, i32* %2, align 4
   store i32 2, i32* %2, align 4
-  call void @gsm_write.1(i32 2)
+  call void @ap_write.1(i32 2)
   ret i32 0
 }
 
-declare void @gsm_write(i32)
+declare void @ap_write(i32)
 
-declare void @gsm_write.1(i32)
+declare void @ap_write.1(i32)
 ```
 <Note that in the above code, there is no dead variable to eliminate>
 
