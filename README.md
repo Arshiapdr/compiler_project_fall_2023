@@ -10,6 +10,7 @@ cd src
 ./ap "<the input code you want to be compiled>"
 ```
 ## Introduction
+- A simple compiler with only integer data type based on [llvm Compiler Infrastructure](https://llvm.org/).
 - In the designed language, the variables have values specified at compile time.
 - In the given input codes, the __result__ variable is defined with the default value first.
 $${\color{red} Dead \space Variable}$$
