@@ -18,7 +18,7 @@ int main(int argc, const char **argv)
     llvm::InitLLVM X(argc, argv);
 
     // Parse command-line options.
-    llvm::cl::ParseCommandLineOptions(argc, argv, "GSM - the expression compiler\n");
+    llvm::cl::ParseCommandLineOptions(argc, argv, "AP - the expression compiler\n");
 
     // Create a lexer object and initialize it with the input expression.
     Lexer Lex(Input);
@@ -28,11 +28,6 @@ int main(int argc, const char **argv)
 
     // Parse the input expression and generate an abstract syntax tree (AST).
     AST *Tree = Parser.parse();
-
-
-
-
-    
 
     // Check if parsing was successful or if there were any syntax errors.
     if (!Tree || Parser.hasError())
@@ -55,9 +50,6 @@ int main(int argc, const char **argv)
     CodeGenerator.collectIdentifiers(Tree);
     CodeGenerator.computeDepends(Tree);
     CodeGenerator.computeDead();
-
-    
-
     CodeGenerator.compile(Tree);
 
     // The program executed successfully.
