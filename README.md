@@ -79,7 +79,7 @@ entry:
   %6 = load i32, i32* %4, align 4
   %7 = add nsw i32 %6, %5
   store i32 %7, i32* %4, align 4
-  call void @gsm_write(i32 %7)
+  call void @ap_write(i32 %7)
   %8 = load i32, i32* %3, align 4
   %9 = load i32, i32* %4, align 4
   %10 = mul nsw i32 %8, %9
@@ -88,12 +88,12 @@ entry:
   %13 = load i32, i32* %2, align 4
   %14 = mul nsw i32 %13, %12
   store i32 %14, i32* %2, align 4
-  call void @gsm_write.1(i32 %14)
+  call void @ap_write.1(i32 %14)
   ret i32 0
 }
 
-declare void @gsm_write(i32)
+declare void @ap_write(i32)
 
-declare void @gsm_write.1(i32)
+declare void @ap_write.1(i32)
 ```
 <Two variables c and d are dead as it is printed in the output, and the corresponding IR is optimized due to eliminating them>
