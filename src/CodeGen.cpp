@@ -11,13 +11,14 @@
 using namespace llvm;
 
 llvm::SmallVector<llvm::StringRef> allVars;
-StringMap<llvm::SmallVector<StringRef>> dependsMap;
+StringMap<llvm::SmallVector<StringRef>> dependsMap;// a dictionarty type data structure, keys are variables and value are variables that are dependent to the key variable
 llvm::SmallVector<llvm::StringRef> deadVars;
 llvm::SmallVector<llvm::StringRef> alive;
 
 // Define a visitor class for generating LLVM IR from the AST.
 namespace
 {
+  // override visit method for Declaration nodes to add all of the defined variables to allVars vector
   class IdentifiersCollector : public ASTVisitor
   {
     public:
@@ -52,6 +53,7 @@ namespace
     }
   };
 
+  // override visit method for Declaration, Factor and Assignment nodes to find each variables's dependents and assign thek to dependsMap
   class ComputeDepends : public ASTVisitor
   {   
     public:
@@ -146,7 +148,7 @@ namespace
       Tree->accept(*this);
       }
   };
-
+  // override visit method to generate low level code with llvm (final step)
   class ToIRVisitor : public ASTVisitor
   {
     Module *M;// easy IR generation
@@ -517,7 +519,6 @@ namespace
   };
 }; // namespace
 
-// new funciton added
 void CodeGen::collectIdentifiers(AST *Tree)
 {
   IdentifiersCollector IdentifierCollector;
@@ -560,7 +561,7 @@ void CodeGen::computeDead()
 
 }
 
-//auxiliary function to perfrom the recursice algorithm
+//auxiliary function to perfrom the recursive algorithm that finds variables that "result" variable is dependent on them
 void addDependenciesRecursive(const llvm::StringRef &variable, llvm::SmallVector<llvm::StringRef> &alive) {
     // Check if the variable is already in the 'alive' vector to avoid duplicates
     if (llvm::find(alive, variable) == alive.end()) {

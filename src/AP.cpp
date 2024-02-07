@@ -46,7 +46,6 @@ int main(int argc, const char **argv)
 
     // Generate code for the AST using a code generator.
     CodeGen CodeGenerator;
-    //new
     CodeGenerator.collectIdentifiers(Tree);
     CodeGenerator.computeDepends(Tree);
     CodeGenerator.computeDead();
