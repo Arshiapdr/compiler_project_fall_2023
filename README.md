@@ -19,6 +19,13 @@ cd src
     int a = (2 + 5) * 8;
     ```
   - __Live Variable:__ A variable that is related to the __result__ and the value of the __result__ depends on it, is a live variable.
+  - For example in the below code, a is a Live Variable:
+  - ```
+    int result;
+    int a = (2 + 5) * 8;
+    int b = 2 * a;
+    result = b / 2;
+    ```
 - In this project, we remove all dead variables related to __result__ from the given code.
 ## Sample Input Codes With Their Outputs
 Input Code 1
